@@ -24,7 +24,7 @@ def test_distance_for_cars_on_the_oposite_side():
 def test_distance_reflexive():
     car1 = Car(angle=6)
     car2 = Car(angle=0.0)
-    assert car1.calculate_distance(car2) == car2.calculate_distance(car2)
+    assert car1.calculate_distance(car2) == car2.calculate_distance(car1)
 
 def test_next_car_index():
     tor1=Tor()
