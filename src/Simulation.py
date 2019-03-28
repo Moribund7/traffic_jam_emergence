@@ -6,13 +6,12 @@ import os
 class Simulation():
     def __init__(self):
         self.tor = Tor()
-        self.tor.pop_last_car()
-
+        # self.tor.pop_last_car()
 
     def update_one_step(self):
         self.tor.update_one_step()
 
-    def simulate_n_steps(self, n, how_often_take_snapshot=5, directory='../data', **kwargs):
+    def simulate_n_steps(self, n, how_often_take_snapshot=2, directory='../data', **kwargs):
         for step in range(n):
             self.tor.update_one_step()
             if step % how_often_take_snapshot == 0:
@@ -23,13 +22,15 @@ class Simulation():
 
 class Tor():
 
-    def __init__(self, how_many_cars=10, desirable_distance_factor=1.1):
+    def __init__(self, how_many_cars=10, desirable_distance_factor=0.7):
         self.distance_between_cars = (2 * np.pi) / how_many_cars
-        self.car_list = self.init_cars(how_many_cars)
+
         self.radius = Car.radius
         self.plot_params = {"x_limit": Car.radius * 1.1,
                             'figsize': 8}
         self.desirable_distance = self.distance_between_cars * desirable_distance_factor
+        self.max_speed = self.desirable_distance
+        self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed)
 
     def show_tor(self):
         fig, ax = self.draw_tor()
@@ -41,7 +42,8 @@ class Tor():
         figsize = self.plot_params['figsize']
         fig, ax = plt.subplots(1, 1, figsize=(figsize, figsize))
         for car in self.car_list:
-            ax.scatter(car.get_position_x(), car.get_position_y())
+            ax.scatter(car.get_position_x(), car.get_position_y(), label=car.angle_velocity)
+        ax.legend()
         ax.set(xlim=[-x_limit, x_limit])
         ax.set(ylim=[-x_limit, x_limit])
 
@@ -49,11 +51,11 @@ class Tor():
             self.plot_road(ax)
         return fig, ax
 
-    def init_cars(self, how_many_cars):
+    def init_cars(self, how_many_cars, max_speed):
         car_list = []
         for car_index in range(how_many_cars):
             angle = car_index * self.distance_between_cars
-            car_list.append(Car(angle=angle))
+            car_list.append(Car(angle=angle, max_speed=max_speed))
         return car_list
 
     def update_one_step(self):
@@ -83,14 +85,15 @@ class Tor():
         return self.car_list[(car_index + 1) % len(self.car_list)]
 
 
-class Car():
+class Car:
     radius = 10.0
 
-    def __init__(self, angle, velocity=0.001, aceleration=0.0):
+    def __init__(self, angle, max_speed, velocity=0.001, aceleration=0.0):
         self.position_angle = angle
         self.angle_velocity = velocity
         self.aceleration = aceleration
         self.normalize_angle()
+        self.max_speed = max_speed
 
     def get_position_angle(self):
         return self.position_angle
@@ -106,11 +109,11 @@ class Car():
         self.normalize_angle()
 
     def normalize_angle(self):
-        self.position_angle=self.position_angle % (2*np.pi)
+        self.position_angle = self.position_angle % (2 * np.pi)
 
     def calculate_distance(self, other):
         d1 = abs(self.get_position_angle() - other.get_position_angle())
-        d2 = 2*np.pi-d1
+        d2 = 2 * np.pi - d1
         return min(d1, d2)
 
     def update_aceleration(self, other, desirable_distance):
@@ -118,20 +121,26 @@ class Car():
         distance = self.calculate_distance(other)
 
         if desirable_distance < distance:
+            if self.angle_velocity > self.max_speed:
+                return
             self.accelerate()
         else:
             self.slow_down()
 
     def update_velocity(self):
+
         self.angle_velocity += self.aceleration
         if self.angle_velocity < 0.0:
             self.angle_velocity = 0.0
             self.aceleration = 0.0
 
-    def accelerate(self, aceleration_speed=0.001):
-            self.aceleration += aceleration_speed
+    def accelerate(self, aceleration_speed=0.0001):
+        self.aceleration += aceleration_speed + 0.1 * np.random.normal() * aceleration_speed
 
-    def slow_down(self, aceleration_speed=0.1):
+    def slow_down(self, aceleration_speed=0.2):
+        if self.aceleration > 0:
+            self.aceleration = -aceleration_speed
+        else:
             self.aceleration -= aceleration_speed
 
 
