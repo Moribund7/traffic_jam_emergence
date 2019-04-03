@@ -11,7 +11,7 @@ class Simulation():
     def update_one_step(self):
         self.tor.update_one_step()
 
-    def simulate_n_steps(self, n, how_often_take_snapshot=1, directory='../data', **kwargs):
+    def simulate_n_steps(self, n, how_often_take_snapshot=5, directory='../data', **kwargs):
         for step in range(n):
             self.tor.update_one_step()
             if step % how_often_take_snapshot == 0:
@@ -125,11 +125,11 @@ class Car:
             if self.angle_velocity > self.max_speed:
                 self.aceleration = 0
                 return
-            self.accelerate()
+            self.accelerate(distance,desirable_distance)
         elif 0.5 * desirable_distance > distance:
             self.slow_down_fast()
         else:
-            self.slow_down()
+            self.slow_down(distance,desirable_distance)
 
     def update_velocity(self):
 
@@ -138,11 +138,14 @@ class Car:
             self.angle_velocity = 0.0
             self.aceleration = 0.0
 
-    def accelerate(self, aceleration_speed=0.0075):
-        self.aceleration = aceleration_speed + 0.01 * np.random.normal() * aceleration_speed
+    def accelerate(self,distance,desirable_distance, aceleration_speed=2*0.0075):
+        if distance > 2 * desirable_distance:
+            self.aceleration = aceleration_speed
+        else:
+            self.aceleration = aceleration_speed * (distance-desirable_distance) / desirable_distance + 0.01 * np.random.normal() * aceleration_speed
 
-    def slow_down(self, aceleration_speed=0.0075):
-        self.aceleration = -(aceleration_speed + 0.01 * np.random.normal() * aceleration_speed)
+    def slow_down(self,distance,desirable_distance, aceleration_speed=4*0.0075):
+        self.aceleration = aceleration_speed * (distance-desirable_distance) / desirable_distance + 0.01 * np.random.normal() * aceleration_speed
 
     def slow_down_fast(self,aceleration_speed=0.045):
         self.aceleration = -aceleration_speed
@@ -150,4 +153,4 @@ class Car:
 
 if __name__ == '__main__':
     S = Simulation()
-    S.simulate_n_steps(100, plot_road=True)
+    S.simulate_n_steps(1000, plot_road=True)
