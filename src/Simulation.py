@@ -11,7 +11,7 @@ class Simulation():
     def update_one_step(self):
         self.tor.update_one_step()
 
-    def simulate_n_steps(self, n, how_often_take_snapshot=10, directory='../data', **kwargs):
+    def simulate_n_steps(self, n, how_often_take_snapshot=1, directory='../data', **kwargs):
         for step in range(n):
             self.tor.update_one_step()
             if step % how_often_take_snapshot == 0:
@@ -29,7 +29,7 @@ class Tor():
         self.plot_params = {"x_limit": Car.radius * 1.1,
                             'figsize': 8}
         self.desirable_distance = self.distance_between_cars * desirable_distance_factor
-        self.max_speed = 1.5*0.01
+        self.max_speed = 1.5*0.1 #TODO zmienic to
         self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed)
 
     def show_tor(self):
@@ -42,7 +42,8 @@ class Tor():
         figsize = self.plot_params['figsize']
         fig, ax = plt.subplots(1, 1, figsize=(figsize, figsize))
         for car in self.car_list:
-            ax.scatter(car.get_position_x(), car.get_position_y(), label=car.angle_velocity)
+            ax.scatter(car.get_position_x(), car.get_position_y(),
+                       label=str("{:2f}".format(car.angle_velocity*100*3.6)))
         ax.legend()
         ax.set(xlim=[-x_limit, x_limit])
         ax.set(ylim=[-x_limit, x_limit])
@@ -86,9 +87,9 @@ class Tor():
 
 
 class Car:
-    radius = 10.0
+    radius = 50.0
 
-    def __init__(self, angle, max_speed, velocity=0.01, aceleration=0.0):
+    def __init__(self, angle, max_speed, velocity=0.1, aceleration=0.0):
         self.position_angle = angle
         self.angle_velocity = velocity
         self.aceleration = aceleration
@@ -137,16 +138,16 @@ class Car:
             self.angle_velocity = 0.0
             self.aceleration = 0.0
 
-    def accelerate(self, aceleration_speed=0.0001):
-        self.aceleration = aceleration_speed + 0.1 * np.random.normal() * aceleration_speed
+    def accelerate(self, aceleration_speed=0.0075):
+        self.aceleration = aceleration_speed + 0.01 * np.random.normal() * aceleration_speed
 
-    def slow_down(self, aceleration_speed=0.0001):
-        self.aceleration = -(aceleration_speed + 0.1 * np.random.normal() * aceleration_speed)
+    def slow_down(self, aceleration_speed=0.0075):
+        self.aceleration = -(aceleration_speed + 0.01 * np.random.normal() * aceleration_speed)
 
-    def slow_down_fast(self,aceleration_speed=0.0005):
+    def slow_down_fast(self,aceleration_speed=0.045):
         self.aceleration = -aceleration_speed
 
 
 if __name__ == '__main__':
     S = Simulation()
-    S.simulate_n_steps(5000, plot_road=True)
+    S.simulate_n_steps(100, plot_road=True)
