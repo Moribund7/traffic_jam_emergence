@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+N_STEPS = 10000
 
 class Simulation():
     def __init__(self):
@@ -11,7 +12,7 @@ class Simulation():
     def update_one_step(self):
         self.tor.update_one_step()
 
-    def simulate_n_steps(self, n, how_often_take_snapshot=5, directory='../data', **kwargs):
+    def simulate_n_steps(self, n, how_often_take_snapshot=N_STEPS//100, directory='../data', **kwargs):
         for step in range(n):
             self.tor.update_one_step()
             if step % how_often_take_snapshot == 0:
@@ -29,7 +30,7 @@ class Tor():
         self.plot_params = {"x_limit": Car.radius * 1.1,
                             'figsize': 8}
         self.desirable_distance = self.distance_between_cars * desirable_distance_factor
-        self.max_speed = 1.5*0.1 #TODO zmienic to
+        self.max_speed = 2*0.1 #TODO zmienic to
         self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed)
 
     def show_tor(self):
@@ -61,7 +62,7 @@ class Tor():
 
     def update_one_step(self):
         for car_index, car in enumerate(self.car_list):
-            car.update_aceleration(self.next_car(car_index), self.desirable_distance)
+            car.update_aceleration(self.next_car(car_index))
             car.update_velocity()
         for car in self.car_list:
             car.move()
@@ -117,9 +118,10 @@ class Car:
         d2 = 2 * np.pi - d1
         return min(d1, d2)
 
-    def update_aceleration(self, other, desirable_distance):
+    def update_aceleration(self, other):
         assert isinstance(other, Car)
         distance = self.calculate_distance(other)
+        desirable_distance = self.get_desirable_distance()
 
         if desirable_distance < distance:
             if self.angle_velocity > self.max_speed:
@@ -130,6 +132,17 @@ class Car:
             self.slow_down_fast()
         else:
             self.slow_down(distance,desirable_distance)
+
+        if self.dont_accelerate(other):
+            self.aceleration = max(self.aceleration, 0)
+
+    def dont_accelerate(self,other):
+        if self.angle_velocity < other.angle_velocity/2:
+            return True
+        return False
+
+    def get_desirable_distance(self):
+        return (self.angle_velocity**2/(2*0.045)+self.angle_velocity/2)*2
 
     def update_velocity(self):
 
@@ -142,10 +155,10 @@ class Car:
         if distance > 2 * desirable_distance:
             self.aceleration = aceleration_speed
         else:
-            self.aceleration = aceleration_speed * (distance-desirable_distance) / desirable_distance + 0.01 * np.random.normal() * aceleration_speed
+            self.aceleration = aceleration_speed * (distance-desirable_distance) / desirable_distance + 0.1 * np.random.normal() * aceleration_speed
 
-    def slow_down(self,distance,desirable_distance, aceleration_speed=4*0.0075):
-        self.aceleration = aceleration_speed * (distance-desirable_distance) / desirable_distance + 0.01 * np.random.normal() * aceleration_speed
+    def slow_down(self,distance,desirable_distance, aceleration_speed=2*0.0075):
+        self.aceleration = aceleration_speed * (distance-desirable_distance) / desirable_distance + 0.1 * np.random.normal() * aceleration_speed
 
     def slow_down_fast(self,aceleration_speed=0.045):
         self.aceleration = -aceleration_speed
@@ -153,4 +166,5 @@ class Car:
 
 if __name__ == '__main__':
     S = Simulation()
-    S.simulate_n_steps(1000, plot_road=True)
+
+    S.simulate_n_steps(N_STEPS, plot_road=True)
