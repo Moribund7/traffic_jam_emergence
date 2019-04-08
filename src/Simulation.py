@@ -150,4 +150,4 @@ class Car:
 
 if __name__ == '__main__':
     S = Simulation()
-    S.simulate_n_steps(100, plot_road=True)
+    S.simulate_n_steps(500, plot_road=True)
