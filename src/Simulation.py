@@ -11,7 +11,7 @@ class Simulation():
     def update_one_step(self):
         self.tor.update_one_step()
 
-    def simulate_n_steps(self, n, how_often_take_snapshot=5, directory='../data', **kwargs):
+    def simulate_n_steps(self, n, how_often_take_snapshot=1, directory='../data', **kwargs):
         for step in range(n):
             self.tor.update_one_step()
             if step % how_often_take_snapshot == 0:
@@ -153,4 +153,4 @@ class Car:
 
 if __name__ == '__main__':
     S = Simulation()
-    S.simulate_n_steps(1000, plot_road=True)
+    S.simulate_n_steps(500, plot_road=True)
