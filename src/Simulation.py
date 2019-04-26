@@ -22,7 +22,7 @@ class Simulation():
 
 class Tor():
 
-    def __init__(self, how_many_cars=10, desirable_distance_factor=1.0):
+    def __init__(self, how_many_cars=30, desirable_distance_factor=1.0):
         self.step_list = []
         self.velocity_list = []
         self.distance_between_cars = (2 * np.pi) / how_many_cars
@@ -31,7 +31,7 @@ class Tor():
         self.plot_params = {"x_limit": Car.radius * 1.1,
                             'figsize': 8}
         self.desirable_distance = self.distance_between_cars * desirable_distance_factor
-        self.max_speed = 1.5*0.1 #TODO zmienic to
+        self.max_speed = 1.5*0.1 #TODO zmienic to jako 1.5 * predkosc poczatkowa
         self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed)
 
         self.chosen_car = 7
@@ -95,7 +95,7 @@ class Tor():
 
 
 class Car:
-    radius = 50.0
+    radius = 50.0*3
 
     def __init__(self, angle, max_speed, velocity=0.1, aceleration=0.0):
         self.position_angle = angle
