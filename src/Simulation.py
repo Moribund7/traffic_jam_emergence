@@ -9,7 +9,7 @@ class Simulation():
         self.car_number=car_number
         self.mean_velocity_for_n_car={}
         self.change_car_number()
-        
+        self.velocity_for_step={}
         #self.tor = Tor(how_many_cars=car_number)
         
         # self.tor.pop_last_car()
@@ -26,7 +26,10 @@ class Simulation():
         self.mean_velocity_for_n_car[self.car_number]=0
         Car.radius-=1
         
-    def simulate_n_steps(self, n, how_often_take_snapshot=501, first_picture = 1000, directory='../data', **kwargs):
+    def simulate_n_steps(self, n, how_often_take_snapshot=501,
+                         first_picture = 1450, directory='../data',
+                         how_often_get_velocity_list=1,**kwargs):
+        
         for step in range(n):
             self.tor.update_one_step()
             if step >= first_picture :
@@ -35,6 +38,8 @@ class Simulation():
                     name = 'step{:03.0f}.png'.format(step)
                     filepath = os.path.join(os.getcwd(), directory, name)
                     self.tor.save_picture(filepath, **kwargs)
+                if step % how_often_get_velocity_list == 0:
+                     self.velocity_for_step[step]=self.tor.get_velocity_for_car_table()
         self.mean_velocity_for_n_car[self.car_number]/=(step-first_picture)#+-1
 
 
@@ -109,6 +114,12 @@ class Tor():
 
     def next_car(self, car_index):
         return self.car_list[(car_index + 1) % len(self.car_list)]
+    
+    def get_velocity_for_car_table(self):
+        velocity_dict={}
+        for car_index,car in enumerate(self.car_list):
+            velocity_dict[car_index]=car.angle_velocity
+        return velocity_dict
 
 
 class Car:
@@ -190,9 +201,16 @@ class Car:
 
 if __name__ == '__main__':
     S = Simulation()
-    for car_n in range(15,71):#15,71
+    for car_n in [30]:#15,71
         S.set_car_number(car_n)
+        Car.radius=165-car_n
         S.simulate_n_steps(N_STEPS, plot_road=True)
         
 #    print(S.mean_velocity)
 #    plt.plot(S.mean_velocity)
+        
+    for step in S.velocity_for_step:
+        for n in S.velocity_for_step[step]:
+            plt.scatter(n,S.velocity_for_step[step][n])
+        plt.savefig("../data/step{:03.0f}.png".format(step))
+        plt.close()
