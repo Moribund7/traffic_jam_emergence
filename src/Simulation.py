@@ -2,28 +2,45 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-N_STEPS = 10000
+N_STEPS = 1500
 
 class Simulation():
-    def __init__(self):
-        self.tor = Tor()
+    def __init__(self,car_number=15):
+        self.car_number=car_number
+        self.mean_velocity_for_n_car={}
+        self.change_car_number()
+        
+        #self.tor = Tor(how_many_cars=car_number)
+        
         # self.tor.pop_last_car()
-
+        
     def update_one_step(self):
         self.tor.update_one_step()
-
-    def simulate_n_steps(self, n, how_often_take_snapshot=N_STEPS//100, directory='../data', **kwargs):
+        
+    def set_car_number(self,car_number):
+        self.car_number = car_number
+        self.change_car_number()
+        
+    def change_car_number(self):
+        self.tor = Tor(how_many_cars=self.car_number)
+        self.mean_velocity_for_n_car[self.car_number]=0
+        Car.radius-=1
+        
+    def simulate_n_steps(self, n, how_often_take_snapshot=501, first_picture = 1000, directory='../data', **kwargs):
         for step in range(n):
             self.tor.update_one_step()
-            if step % how_often_take_snapshot == 0:
-                name = 'step{:03.0f}.png'.format(step)
-                filepath = os.path.join(os.getcwd(), directory, name)
-                self.tor.save_picture(filepath, **kwargs)
+            if step >= first_picture :
+                self.mean_velocity_for_n_car[self.car_number]+=self.tor.mean_velocity()
+                if step % how_often_take_snapshot == 0:
+                    name = 'step{:03.0f}.png'.format(step)
+                    filepath = os.path.join(os.getcwd(), directory, name)
+                    self.tor.save_picture(filepath, **kwargs)
+        self.mean_velocity_for_n_car[self.car_number]/=(step-first_picture)#+-1
 
 
 class Tor():
 
-    def __init__(self, how_many_cars=10, desirable_distance_factor=1.0):
+    def __init__(self, how_many_cars=30, desirable_distance_factor=1.0):
         self.distance_between_cars = (2 * np.pi) / how_many_cars
 
         self.radius = Car.radius
@@ -44,7 +61,7 @@ class Tor():
         fig, ax = plt.subplots(1, 1, figsize=(figsize, figsize))
         for car in self.car_list:
             ax.scatter(car.get_position_x(), car.get_position_y(),
-                       label=str("{:2f}".format(car.angle_velocity*100*3.6)))
+                       label=str("{:2f}".format(car.angle_velocity*2*Car.radius*3.6)))
         ax.legend()
         ax.set(xlim=[-x_limit, x_limit])
         ax.set(ylim=[-x_limit, x_limit])
@@ -59,7 +76,14 @@ class Tor():
             angle = car_index * self.distance_between_cars
             car_list.append(Car(angle=angle, max_speed=max_speed))
         return car_list
-
+    
+    def mean_velocity(self):
+        n=len(self.car_list)
+        velocity_sum=0
+        for car in self.car_list:
+            velocity_sum+=car.angle_velocity
+        return (velocity_sum/n)*2*Car.radius*3.6#w km na h
+    
     def update_one_step(self):
         for car_index, car in enumerate(self.car_list):
             car.update_aceleration(self.next_car(car_index))
@@ -88,7 +112,7 @@ class Tor():
 
 
 class Car:
-    radius = 50.0
+    radius = 50.0*3
 
     def __init__(self, angle, max_speed, velocity=0.1, aceleration=0.0):
         self.position_angle = angle
@@ -166,5 +190,9 @@ class Car:
 
 if __name__ == '__main__':
     S = Simulation()
-
-    S.simulate_n_steps(N_STEPS, plot_road=True)
+    for car_n in range(15,71):#15,71
+        S.set_car_number(car_n)
+        S.simulate_n_steps(N_STEPS, plot_road=True)
+        
+#    print(S.mean_velocity)
+#    plt.plot(S.mean_velocity)
