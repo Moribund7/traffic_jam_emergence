@@ -17,12 +17,14 @@ class Simulation():
             if step % how_often_take_snapshot == 0:
                 name = 'step{:03.0f}.png'.format(step)
                 filepath = os.path.join(os.getcwd(), directory, name)
-                self.tor.save_picture(filepath, **kwargs)
+                self.tor.save_picture(filepath,step, **kwargs)
 
 
 class Tor():
 
     def __init__(self, how_many_cars=10, desirable_distance_factor=1.0):
+        self.step_list = []
+        self.velocity_list = []
         self.distance_between_cars = (2 * np.pi) / how_many_cars
 
         self.radius = Car.radius
@@ -32,25 +34,31 @@ class Tor():
         self.max_speed = 1.5*0.1 #TODO zmienic to
         self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed)
 
+        self.chosen_car = 7
     def show_tor(self):
         fig, ax = self.draw_tor()
         fig.show()
         plt.close()
 
-    def draw_tor(self, plot_road=False):
+    def draw_tor(self, step, plot_road=False):
         x_limit = self.plot_params['x_limit']
         figsize = self.plot_params['figsize']
-        fig, ax = plt.subplots(1, 1, figsize=(figsize, figsize))
-        for car in self.car_list:
-            ax.scatter(car.get_position_x(), car.get_position_y(),
-                       label=str("{:2f}".format(car.angle_velocity*100*3.6)))
-        ax.legend()
-        ax.set(xlim=[-x_limit, x_limit])
-        ax.set(ylim=[-x_limit, x_limit])
+        fig, (ax1,ax2) = plt.subplots(2, 1, figsize=(figsize*3/4, figsize), gridspec_kw = {'height_ratios':[3, 1]})
+        for car_index,car  in enumerate(self.car_list):
+            c='r' if car_index != self.chosen_car else 'g'
+            ax1.scatter(car.get_position_x(), car.get_position_y(),
+                       label=str("{:2f}".format(car.angle_velocity*100*3.6)),
+                        c=c)
+        ax1.legend()
+        ax1.set(xlim=[-x_limit, x_limit])
+        ax1.set(ylim=[-x_limit, x_limit])
+        self.step_list.append(step)
+        self.velocity_list.append(self.car_list[self.chosen_car].angle_velocity)
+        ax2.scatter(self.step_list, self.velocity_list)
 
         if plot_road:
-            self.plot_road(ax)
-        return fig, ax
+            self.plot_road(ax1)
+        return fig, ax1
 
     def init_cars(self, how_many_cars, max_speed):
         car_list = []
@@ -66,8 +74,8 @@ class Tor():
         for car in self.car_list:
             car.move()
 
-    def save_picture(self, name, **kwargs):
-        fig, ax = self.draw_tor(**kwargs)
+    def save_picture(self, name,step, **kwargs):
+        fig, ax = self.draw_tor(step,**kwargs)
         fig.savefig(name)
         plt.close()
 
