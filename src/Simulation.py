@@ -1,11 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from abc import ABC, abstractmethod
 
 
 class Simulation():
-    def __init__(self):
-        self.tor = Tor()
+    def __init__(self, aceleration_model=None):
+        self.tor = Tor(aceleration_model=aceleration_model)
         # self.tor.pop_last_car()
 
     def update_one_step(self):
@@ -27,7 +28,7 @@ class Simulation():
 
 class Tor():
 
-    def __init__(self, how_many_cars=10, desirable_distance_factor=1.0):
+    def __init__(self, how_many_cars=10, desirable_distance_factor=1.0, aceleration_model=None):
         self.step_list = []
         self.velocity_list = []
         self.distance_between_cars = (2 * np.pi) / how_many_cars
@@ -37,7 +38,7 @@ class Tor():
                             'figsize': 8}
         self.desirable_distance = self.distance_between_cars * desirable_distance_factor
         self.max_speed = 1.5*0.1 #TODO zmienic to
-        self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed)
+        self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed, aceleration_model=aceleration_model)
 
         self.chosen_car = 7
     def show_tor(self,step,**kwargs):
@@ -66,11 +67,16 @@ class Tor():
             self.plot_road(ax1)
         return fig, ax1
 
-    def init_cars(self, how_many_cars, max_speed):
+    def init_cars(self, how_many_cars, max_speed, aceleration_model):
         car_list = []
         for car_index in range(how_many_cars):
             angle = car_index * self.distance_between_cars
-            car_list.append(Car(angle=angle, max_speed=max_speed))
+            if aceleration_model == "binary":
+                car_list.append(Car_binary_aceleration(angle=angle, max_speed=max_speed))
+            elif aceleration_model == 'linear':
+                car_list.append(Car_linear_aceleration(angle=angle, max_speed=max_speed))
+            else:
+                raise Exception("Wrong aceleration model")
         return car_list
 
     def update_one_step(self):
@@ -100,7 +106,7 @@ class Tor():
         return self.car_list[(car_index + 1) % len(self.car_list)]
 
 
-class Car:
+class Car(ABC):
     radius = 50.0
 
     def __init__(self, angle, max_speed, velocity=0.1, aceleration=0.0):
@@ -130,6 +136,16 @@ class Car:
         d1 = abs(self.get_position_angle() - other.get_position_angle())
         d2 = 2 * np.pi - d1
         return min(d1, d2)
+
+    @abstractmethod
+    def update_aceleration(self, other, desirable_distance):
+        raise NotImplementedError("Please Implement this method")
+
+    @abstractmethod
+    def update_velocity(self):
+        raise NotImplementedError("Please Implement this method")
+
+class Car_binary_aceleration(Car):
 
     def update_aceleration(self, other, desirable_distance):
         assert isinstance(other, Car)
@@ -162,7 +178,44 @@ class Car:
         self.aceleration = -aceleration_speed
 
 
+class Car_linear_aceleration(Car):
+
+    def update_aceleration(self, other, desirable_distance):
+        assert isinstance(other, Car)
+        distance = self.calculate_distance(other)
+
+        if desirable_distance < distance:
+            if self.angle_velocity > self.max_speed:
+                self.aceleration = 0
+                return
+            self.accelerate(distance,desirable_distance)
+        elif 0.5 * desirable_distance > distance:
+            self.slow_down_fast()
+        else:
+            self.slow_down(distance,desirable_distance)
+
+    def update_velocity(self):
+
+        self.angle_velocity += self.aceleration
+        if self.angle_velocity < 0.0:
+            self.angle_velocity = 0.0
+            self.aceleration = 0.0
+
+    def accelerate(self,distance,desirable_distance, aceleration_speed=2*0.0075):
+        if distance > 2 * desirable_distance:
+            self.aceleration = aceleration_speed
+        else:
+            self.aceleration = aceleration_speed * (distance-desirable_distance) / desirable_distance + 0.01 * np.random.normal() * aceleration_speed
+
+    def slow_down(self,distance,desirable_distance, aceleration_speed=4*0.0075):
+        self.aceleration = aceleration_speed * (distance-desirable_distance) / desirable_distance + 0.01 * np.random.normal() * aceleration_speed
+
+    def slow_down_fast(self,aceleration_speed=0.045):
+        self.aceleration = -aceleration_speed
+
+
+
 if __name__ == '__main__':
     plt.interactive(True)
-    S = Simulation()
+    S = Simulation(aceleration_model='linear')
     S.simulate_n_steps(500, plot_road=True)
