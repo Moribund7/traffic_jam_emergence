@@ -11,14 +11,19 @@ class Simulation():
     def update_one_step(self):
         self.tor.update_one_step()
 
-    def simulate_n_steps(self, n, how_often_take_snapshot=1, directory='../data', **kwargs):
+    def simulate_n_steps(self, n, how_often_take_snapshot=2,
+                         directory='../data', first_snap=120,
+                         **kwargs):
+
         for step in range(n):
             self.tor.update_one_step()
-            if step % how_often_take_snapshot == 0:
-                name = 'step{:03.0f}.png'.format(step)
-                filepath = os.path.join(os.getcwd(), directory, name)
-                self.tor.save_picture(filepath,step, **kwargs)
-
+            if step-first_snap>=0:
+                if step % how_often_take_snapshot == 0:
+                    name = 'step{:03.0f}.png'.format(step)
+                    filepath = os.path.join(os.getcwd(), directory, name)
+                    self.tor.save_picture(filepath,step, **kwargs)
+                    # self.tor.show_tor(step,**kwargs)
+                    # print('ud')
 
 class Tor():
 
@@ -35,8 +40,8 @@ class Tor():
         self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed)
 
         self.chosen_car = 7
-    def show_tor(self):
-        fig, ax = self.draw_tor()
+    def show_tor(self,step,**kwargs):
+        fig, ax = self.draw_tor(step,**kwargs)
         fig.show()
         plt.close()
 
@@ -47,13 +52,14 @@ class Tor():
         for car_index,car  in enumerate(self.car_list):
             c='r' if car_index != self.chosen_car else 'g'
             ax1.scatter(car.get_position_x(), car.get_position_y(),
-                       label=str("{:2f}".format(car.angle_velocity*100*3.6)),
+                       label=str("{:2.2f}".format(car.angle_velocity*100*3.6))+
+                        r'$\frac{km}{h}$',
                         c=c)
         ax1.legend()
         ax1.set(xlim=[-x_limit, x_limit])
         ax1.set(ylim=[-x_limit, x_limit])
         self.step_list.append(step)
-        self.velocity_list.append(self.car_list[self.chosen_car].angle_velocity)
+        self.velocity_list.append(self.car_list[self.chosen_car].angle_velocity*100*3.6)
         ax2.scatter(self.step_list, self.velocity_list)
 
         if plot_road:
@@ -157,5 +163,6 @@ class Car:
 
 
 if __name__ == '__main__':
+    plt.interactive(True)
     S = Simulation()
     S.simulate_n_steps(500, plot_road=True)
