@@ -37,7 +37,7 @@ class Tor():
         self.plot_params = {"x_limit": Car.radius * 1.1,
                             'figsize': 8}
         self.desirable_distance = self.distance_between_cars * desirable_distance_factor
-        self.max_speed = 1.5*0.1 #TODO zmienic to
+        self.max_speed = 1.5*0.1 #TODO zmienic to jako 1.5 * predkosc poczatkowa
         self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed, aceleration_model=aceleration_model)
 
         self.chosen_car = 7
