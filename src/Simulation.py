@@ -75,6 +75,8 @@ class Tor():
                 car_list.append(Car_binary_aceleration(angle=angle, max_speed=max_speed))
             elif aceleration_model == 'linear':
                 car_list.append(Car_linear_aceleration(angle=angle, max_speed=max_speed))
+            elif aceleration_model == 'function_in_velocity':
+                car_list.append(Car_function_in_velocity_aceleration(angle=angle, max_speed=max_speed))
             else:
                 raise Exception("Wrong aceleration model")
         return car_list
@@ -141,9 +143,11 @@ class Car(ABC):
     def update_aceleration(self, other, desirable_distance):
         raise NotImplementedError("Please Implement this method")
 
-    @abstractmethod
     def update_velocity(self):
-        raise NotImplementedError("Please Implement this method")
+        self.angle_velocity += self.aceleration
+        if self.angle_velocity < 0.0:
+            self.angle_velocity = 0.0
+            self.aceleration = 0.0
 
 class Car_binary_aceleration(Car):
 
@@ -161,12 +165,6 @@ class Car_binary_aceleration(Car):
         else:
             self.slow_down()
 
-    def update_velocity(self):
-
-        self.angle_velocity += self.aceleration
-        if self.angle_velocity < 0.0:
-            self.angle_velocity = 0.0
-            self.aceleration = 0.0
 
     def accelerate(self, aceleration_speed=0.0075):
         self.aceleration = aceleration_speed + 0.01 * np.random.normal() * aceleration_speed
@@ -194,13 +192,6 @@ class Car_linear_aceleration(Car):
         else:
             self.slow_down(distance,desirable_distance)
 
-    def update_velocity(self):
-
-        self.angle_velocity += self.aceleration
-        if self.angle_velocity < 0.0:
-            self.angle_velocity = 0.0
-            self.aceleration = 0.0
-
     def accelerate(self,distance,desirable_distance, aceleration_speed=2*0.0075):
         if distance > 2 * desirable_distance:
             self.aceleration = aceleration_speed
@@ -213,6 +204,48 @@ class Car_linear_aceleration(Car):
     def slow_down_fast(self,aceleration_speed=0.045):
         self.aceleration = -aceleration_speed
 
+
+class Car_function_in_velocity_aceleration(Car):
+
+    def update_aceleration(self, other, redundant_argument):
+        assert isinstance(other, Car)
+        distance = self.calculate_distance(other)
+        desirable_distance = self.get_desirable_distance()
+
+        if desirable_distance < distance:
+            if self.angle_velocity > self.max_speed:
+                self.aceleration = 0
+                return
+            self.accelerate(distance, desirable_distance)
+        elif 0.5 * desirable_distance > distance:
+            self.slow_down_fast()
+        else:
+            self.slow_down(distance, desirable_distance)
+
+        if self.dont_accelerate(other):
+            self.aceleration = max(self.aceleration, 0)
+
+    def dont_accelerate(self, other):
+        if self.angle_velocity < other.angle_velocity / 2:
+            return True
+        return False
+
+    def get_desirable_distance(self):
+        return (self.angle_velocity ** 2 / (2 * 0.045) + self.angle_velocity / 2) * 2
+
+    def accelerate(self, distance, desirable_distance, aceleration_speed=2 * 0.0075):
+        if distance > 2 * desirable_distance:
+            self.aceleration = aceleration_speed
+        else:
+            self.aceleration = aceleration_speed * (
+                        distance - desirable_distance) / desirable_distance + 0.1 * np.random.normal() * aceleration_speed
+
+    def slow_down(self, distance, desirable_distance, aceleration_speed=2 * 0.0075):
+        self.aceleration = aceleration_speed * (
+                    distance - desirable_distance) / desirable_distance + 0.1 * np.random.normal() * aceleration_speed
+
+    def slow_down_fast(self, aceleration_speed=0.045):
+        self.aceleration = -aceleration_speed
 
 
 if __name__ == '__main__':
