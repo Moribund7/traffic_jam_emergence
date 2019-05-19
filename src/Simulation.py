@@ -48,6 +48,44 @@ class Simulation():
 
         return self.plot_params
 
+    def get_ride_plot(self, n, plot_params=None, plot_road=True):
+
+        if plot_params is None:
+            plot_params = {"how_often_take_snapshot": 2,
+                           "first_picture": 1,
+                           "how_often_get_velocity_list": 10000}
+        self.plot_params=plot_params
+        self.simulate_n_steps(n,plot_road=plot_road)
+
+    def get_flow(self, N_STEPS, car_n_min, car_n_max, plot_params=None, is_plot_flow=False,
+                 is_plot_velocity_for_step=False):
+        if plot_params is None:
+            plot_params = {"how_often_take_snapshot": 1000, "first_picture": N_STEPS-100, "how_often_get_velocity_list": 1}
+        self.plot_params = plot_params
+        for car_n in range(car_n_min, car_n_max+1):  # 15,71
+            self.set_car_number(car_n)
+            Car.radius = 165 - car_n
+            self.simulate_n_steps(N_STEPS)
+
+        if is_plot_flow:
+            self.plot_flow()
+
+        if is_plot_velocity_for_step:
+            for step in self.velocity_for_step:
+                plt.scatter(self.velocity_for_step[step].keys(), self.velocity_for_step[step].values())
+                plt.ylim((0.04, 0.1))
+                plt.savefig("../data/step{:03.0f}.png".format(step))
+                plt.close()
+
+    def plot_flow(self):
+        for car_n in self.mean_velocity_for_n_car:
+            plt.scatter(car_n, self.mean_velocity_for_n_car[car_n] * car_n, c='b')
+        plt.xlabel("Liczba samochodów")
+        plt.ylabel("Przepływ")
+        plt.savefig("../data/flow.png")
+        plt.close()
+
+
 class Tor():
 
     def __init__(self, how_many_cars=10, desirable_distance_factor=1.0, aceleration_model=None):
@@ -283,27 +321,29 @@ class Car_function_in_velocity_aceleration(Car):
 
 
 if __name__ == '__main__':
-    # plt.interactive(True)
-    # S = Simulation(aceleration_model='linear')
-    # S.simulate_n_steps(500, plot_road=True)
-
-
-#################################for f in velocity#########
-    N_STEPS = 1600
     S = Simulation(aceleration_model='function_in_velocity')
-    for car_n in range(15, 71):  # 15,71
-        S.set_car_number(car_n)
-        Car.radius = 165 - car_n
-        S.simulate_n_steps(N_STEPS, plot_road=True)
+    # S.get_ride_plot(200)
 
-    for car_n in range(15, 71):
-        plt.scatter(car_n, S.mean_velocity_for_n_car[car_n])
-    plt.savefig("../data/aaa.png")
+    # S.get_flow(1600, car_n_min=10, car_n_max=80, is_plot_flow=True)
+
+
+    S_b=Simulation(aceleration_model="binary")
+    S_l=Simulation(aceleration_model="linear")
+    S_f=Simulation(aceleration_model="function_in_velocity")
+    models=[S_b,S_l,S_f]
+    color={"binary":'r',"linear":'g',"function_in_velocity":'b'}
+
+    for model in models:
+        model.get_flow(1100, car_n_min=10, car_n_max=80)
+
+    for model in models:
+        for car_n in model.mean_velocity_for_n_car:
+            plt.scatter(car_n, model.mean_velocity_for_n_car[car_n] * car_n,
+                        c=color[model.aceleration_model],
+                        label=model.aceleration_model)
+    plt.xlabel("Liczba samochodów")
+    plt.ylabel("Przepływ")
+    plt.savefig("../data/flow.png")
     plt.close()
 
-    # for step in S.velocity_for_step:
-    # #for n in S.velocity_for_step[step]:
-    #     plt.scatter(S.velocity_for_step[step].keys(), S.velocity_for_step[step].values())
-    #     plt.ylim((0.04, 0.1))
-    #     plt.savefig("../data/step{:03.0f}.png".format(step))
-    #     plt.close()
+
