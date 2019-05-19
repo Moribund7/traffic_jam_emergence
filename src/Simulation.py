@@ -5,26 +5,42 @@ from abc import ABC, abstractmethod
 
 
 class Simulation():
-    def __init__(self, aceleration_model=None):
-        self.tor = Tor(aceleration_model=aceleration_model)
-        # self.tor.pop_last_car()
+    def __init__(self, aceleration_model=None, car_number=10):
+        self.aceleration_model=aceleration_model
+        self.car_number = car_number
+        self.mean_velocity_for_n_car = {}
+        self.change_car_number()
+        self.velocity_for_step = {}
 
     def update_one_step(self):
         self.tor.update_one_step()
 
-    def simulate_n_steps(self, n, how_often_take_snapshot=2,
-                         directory='../data', first_snap=120,
-                         **kwargs):
+    def set_car_number(self, car_number):
+        self.car_number = car_number
+        self.change_car_number()
+
+    def change_car_number(self):
+        self.tor = Tor(aceleration_model=self.aceleration_model,
+                       how_many_cars=self.car_number)
+        self.mean_velocity_for_n_car[self.car_number] = 0
+        Car.radius -= 1
+
+    def simulate_n_steps(self, n, how_often_take_snapshot=1,
+                         first_picture=1, directory='../data',
+                         how_often_get_velocity_list=1, **kwargs):
 
         for step in range(n):
-            self.tor.update_one_step()
-            if step-first_snap>=0:
+            self.update_one_step()
+            if step >= first_picture:
+                self.mean_velocity_for_n_car[self.car_number] += self.tor.mean_velocity()
                 if step % how_often_take_snapshot == 0:
                     name = 'step{:03.0f}.png'.format(step)
                     filepath = os.path.join(os.getcwd(), directory, name)
-                    self.tor.save_picture(filepath,step, **kwargs)
-                    # self.tor.show_tor(step,**kwargs)
-                    # print('ud')
+                    self.tor.save_picture(filepath,step=step, **kwargs)
+                if step % how_often_get_velocity_list == 0:
+                    self.velocity_for_step[step] = self.tor.get_velocity_for_car_table()
+        self.mean_velocity_for_n_car[self.car_number] /= (step - first_picture)  # +-1
+
 
 class Tor():
 
@@ -37,7 +53,7 @@ class Tor():
         self.plot_params = {"x_limit": Car.radius * 1.1,
                             'figsize': 8}
         self.desirable_distance = self.distance_between_cars * desirable_distance_factor
-        self.max_speed = 1.5*0.1 #TODO zmienic to jako 1.5 * predkosc poczatkowa
+        self.max_speed = 1.5*0.1 #TODO zmienic to jako 1.5 * predkosc poczatkowa lub jako 2*
         self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed, aceleration_model=aceleration_model)
 
         self.chosen_car = 7
@@ -53,7 +69,7 @@ class Tor():
         for car_index,car  in enumerate(self.car_list):
             c='r' if car_index != self.chosen_car else 'g'
             ax1.scatter(car.get_position_x(), car.get_position_y(),
-                       label=str("{:2.2f}".format(car.angle_velocity*100*3.6))+
+                       label=str("{:2.2f}".format(car.angle_velocity* 2 * Car.radius *3.6))+
                         r'$\frac{km}{h}$',
                         c=c)
         ax1.legend()
@@ -74,12 +90,19 @@ class Tor():
             if aceleration_model == "binary":
                 car_list.append(Car_binary_aceleration(angle=angle, max_speed=max_speed))
             elif aceleration_model == 'linear':
-                car_list.append(Car_linear_aceleration(angle=angle, max_speed=max_speed))
+                car_list.append(CarLinearAcceleration(angle=angle, max_speed=max_speed))
             elif aceleration_model == 'function_in_velocity':
                 car_list.append(Car_function_in_velocity_aceleration(angle=angle, max_speed=max_speed))
             else:
                 raise Exception("Wrong aceleration model")
         return car_list
+
+    def mean_velocity(self):
+        n = len(self.car_list)
+        velocity_sum = 0
+        for car in self.car_list:
+            velocity_sum += car.angle_velocity
+        return (velocity_sum / n) * 2 * Car.radius * 3.6  # w km na h
 
     def update_one_step(self):
         for car_index, car in enumerate(self.car_list):
@@ -107,6 +130,11 @@ class Tor():
     def next_car(self, car_index):
         return self.car_list[(car_index + 1) % len(self.car_list)]
 
+    def get_velocity_for_car_table(self):
+        velocity_dict = {}
+        for car_index, car in enumerate(self.car_list):
+            velocity_dict[car_index] = car.angle_velocity
+        return velocity_dict
 
 class Car(ABC):
     radius = 50.0
@@ -176,7 +204,7 @@ class Car_binary_aceleration(Car):
         self.aceleration = -aceleration_speed
 
 
-class Car_linear_aceleration(Car):
+class CarLinearAcceleration(Car):
 
     def update_aceleration(self, other, desirable_distance):
         assert isinstance(other, Car)
@@ -252,3 +280,22 @@ if __name__ == '__main__':
     plt.interactive(True)
     S = Simulation(aceleration_model='linear')
     S.simulate_n_steps(500, plot_road=True)
+
+
+#################################for f in velocity#########
+ # N_STEPS = 1600
+ #    S = Simulation()
+ #    for car_n in [30]:  # 15,71
+ #        S.set_car_number(car_n)
+ #        Car.radius = 165 - car_n
+ #        S.simulate_n_steps(N_STEPS, plot_road=True)
+ #
+ #    #    print(S.mean_velocity)
+ #    #    plt.plot(S.mean_velocity)
+ #
+ #    for step in S.velocity_for_step:
+ #    #for n in S.velocity_for_step[step]:
+ #        plt.scatter(S.velocity_for_step[step].keys(), S.velocity_for_step[step].values())
+ #        plt.ylim((0.04, 0.1))
+ #        plt.savefig("../data/step{:03.0f}.png".format(step))
+ #        plt.close()

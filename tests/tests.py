@@ -41,8 +41,15 @@ def test_car_inheritance():
     car1=Car_binary_aceleration(1,1)
     car1.update_velocity()
 
-def test_():
+def test_create_diffrent_models():
     car1=Car_binary_aceleration(1, 1)
-    car2=Car_linear_aceleration(1, 1)
-    for car in [car1, car2]:
+    car2=CarLinearAcceleration(1, 1)
+    car3=Car_function_in_velocity_aceleration(1,1)
+    for car in [car1, car2,car3]:
         car.update_velocity()
+
+def test_track_car_number():
+    S=Simulation("linear")
+    assert len(S.tor.car_list)==15
+
+
