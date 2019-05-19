@@ -5,8 +5,10 @@ from abc import ABC, abstractmethod
 
 
 class Simulation():
-    def __init__(self, aceleration_model=None, car_number=10):
+    def __init__(self, aceleration_model=None, car_number=10, plot_params=None):
         self.aceleration_model=aceleration_model
+        self.plot_params=plot_params
+        self.tor = None
         self.car_number = car_number
         self.mean_velocity_for_n_car = {}
         self.change_car_number()
@@ -25,22 +27,26 @@ class Simulation():
         self.mean_velocity_for_n_car[self.car_number] = 0
         Car.radius -= 1
 
-    def simulate_n_steps(self, n, how_often_take_snapshot=1,
-                         first_picture=1, directory='../data',
-                         how_often_get_velocity_list=1, **kwargs):
+    def simulate_n_steps(self, n,directory='../data',**kwargs):
 
+        plot_params=self.get_plot_params()
         for step in range(n):
             self.update_one_step()
-            if step >= first_picture:
+            if step >= plot_params["first_picture"]:
                 self.mean_velocity_for_n_car[self.car_number] += self.tor.mean_velocity()
-                if step % how_often_take_snapshot == 0:
+                if step % plot_params["how_often_take_snapshot"] == 0:
                     name = 'step{:03.0f}.png'.format(step)
                     filepath = os.path.join(os.getcwd(), directory, name)
                     self.tor.save_picture(filepath,step=step, **kwargs)
-                if step % how_often_get_velocity_list == 0:
+                if step % plot_params["how_often_get_velocity_list"]== 0:
                     self.velocity_for_step[step] = self.tor.get_velocity_for_car_table()
-        self.mean_velocity_for_n_car[self.car_number] /= (step - first_picture)  # +-1
+        self.mean_velocity_for_n_car[self.car_number] /= (step - plot_params["first_picture"])  # +-1
 
+    def get_plot_params(self):
+        if self.plot_params is None:
+            self.plot_params = {"how_often_take_snapshot":501,"first_picture":1450,"how_often_get_velocity_list":1}
+
+        return self.plot_params
 
 class Tor():
 
@@ -277,25 +283,27 @@ class Car_function_in_velocity_aceleration(Car):
 
 
 if __name__ == '__main__':
-    plt.interactive(True)
-    S = Simulation(aceleration_model='linear')
-    S.simulate_n_steps(500, plot_road=True)
+    # plt.interactive(True)
+    # S = Simulation(aceleration_model='linear')
+    # S.simulate_n_steps(500, plot_road=True)
 
 
 #################################for f in velocity#########
- # N_STEPS = 1600
- #    S = Simulation()
- #    for car_n in [30]:  # 15,71
- #        S.set_car_number(car_n)
- #        Car.radius = 165 - car_n
- #        S.simulate_n_steps(N_STEPS, plot_road=True)
- #
- #    #    print(S.mean_velocity)
- #    #    plt.plot(S.mean_velocity)
- #
- #    for step in S.velocity_for_step:
- #    #for n in S.velocity_for_step[step]:
- #        plt.scatter(S.velocity_for_step[step].keys(), S.velocity_for_step[step].values())
- #        plt.ylim((0.04, 0.1))
- #        plt.savefig("../data/step{:03.0f}.png".format(step))
- #        plt.close()
+    N_STEPS = 1600
+    S = Simulation(aceleration_model='function_in_velocity')
+    for car_n in range(15, 71):  # 15,71
+        S.set_car_number(car_n)
+        Car.radius = 165 - car_n
+        S.simulate_n_steps(N_STEPS, plot_road=True)
+
+    for car_n in range(15, 71):
+        plt.scatter(car_n, S.mean_velocity_for_n_car[car_n])
+    plt.savefig("../data/aaa.png")
+    plt.close()
+
+    # for step in S.velocity_for_step:
+    # #for n in S.velocity_for_step[step]:
+    #     plt.scatter(S.velocity_for_step[step].keys(), S.velocity_for_step[step].values())
+    #     plt.ylim((0.04, 0.1))
+    #     plt.savefig("../data/step{:03.0f}.png".format(step))
+    #     plt.close()
