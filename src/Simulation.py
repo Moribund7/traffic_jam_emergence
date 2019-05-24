@@ -108,6 +108,16 @@ class Tor():
         fig.show()
         plt.close()
 
+
+    def get_fastes_and_slowest_index(self):
+        car_speed_list=[]
+        for car in self.car_list:
+            car_speed_list.append(car.angle_velocity)
+        min_index=car_speed_list.index(min(car_speed_list))
+        max_index=car_speed_list.index(max(car_speed_list))
+        
+        return max_index,min_index
+
     def draw_tor(self, step, plot_road=False, plot_velocity_scatter=False, is_mark_fasted_car=False):
         x_limit = self.plot_params['x_limit']
         figsize = self.plot_params['figsize']
@@ -120,7 +130,13 @@ class Tor():
             mean_angle_speed = self.get_mean_angle_speed()
         for car_index,car in enumerate(self.car_list):
             if is_mark_fasted_car:
-                c = 'r' if car.angle_velocity > 2 * mean_angle_speed else 'b'
+                fastes_car_index , slowest_car_index = self.get_fastes_and_slowest_index()
+                if car_index == fastes_car_index:
+                    c= 'r'
+                elif car_index == slowest_car_index:
+                    c = 'b'
+                else:
+                    c= 'g'
             else:
                 c='r' if car_index != self.chosen_car else 'g'
             ax1.scatter(car.get_position_x(), car.get_position_y(),
@@ -355,7 +371,7 @@ if __name__ == '__main__':
                    how_many_pictures=100)
 
     def plot_ride_fasted_car():
-        S = Simulation(aceleration_model='linear')
+        S = Simulation(car_number=15,aceleration_model='function_in_velocity')
         plot_params = {"how_often_take_snapshot": 2,
                        "first_picture": 100,
                        "how_often_get_velocity_list": 10000}
@@ -365,7 +381,7 @@ if __name__ == '__main__':
         S = Simulation(aceleration_model="function_in_velocity")
         S.get_flow(1100, car_n_min=10, car_n_max=80, is_plot_flow=True)
 
-    plot_flow()
+    plot_ride_fasted_car()
 
     def plot_flow_vs_models():
         S_b=Simulation(aceleration_model="binary")
