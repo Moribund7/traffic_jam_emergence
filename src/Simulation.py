@@ -60,7 +60,7 @@ class Simulation():
     def get_flow(self, N_STEPS, car_n_min, car_n_max, plot_params=None, is_plot_flow=False,
                  is_plot_velocity_for_step=False, how_many_pictures=100):
         if plot_params is None:
-            plot_params = {"how_often_take_snapshot": 1000, "first_picture": N_STEPS-how_many_pictures, "how_often_get_velocity_list": 1}
+            plot_params = {"how_often_take_snapshot": 100000, "first_picture": N_STEPS-how_many_pictures, "how_often_get_velocity_list": 1}
         self.plot_params = plot_params
         for car_n in range(car_n_min, car_n_max+1):  # 15,71
             self.set_car_number(car_n)
@@ -81,8 +81,8 @@ class Simulation():
 
     def plot_flow(self):
         for car_n in self.mean_velocity_for_n_car:
-            plt.scatter(car_n, self.mean_velocity_for_n_car[car_n] * car_n, c='b')
-        plt.xlabel("Liczba samochodów")
+            plt.scatter(self.mean_velocity_for_n_car[car_n], self.mean_velocity_for_n_car[car_n] * car_n, c='b')
+        plt.xlabel("Średnia prędkość km/h")
         plt.ylabel("Przepływ")
         plt.savefig("../data/flow.png")
         plt.close()
@@ -381,7 +381,7 @@ if __name__ == '__main__':
         S = Simulation(aceleration_model="function_in_velocity")
         S.get_flow(1100, car_n_min=10, car_n_max=80, is_plot_flow=True)
 
-    plot_ride_fasted_car()
+    plot_flow()
 
     def plot_flow_vs_models():
         S_b=Simulation(aceleration_model="binary")
