@@ -58,7 +58,7 @@ class Simulation():
         self.simulate_n_steps(n,plot_road=plot_road,**kwargs)
 
     def get_flow(self, N_STEPS, car_n_min, car_n_max, plot_params=None, is_plot_flow=False,
-                 is_plot_velocity_for_step=False, how_many_pictures=100):
+                 is_plot_velocity_for_step=False, how_many_pictures=100,ylim=(40,100)):
         if plot_params is None:
             plot_params = {"how_often_take_snapshot": 100000, "first_picture": N_STEPS-how_many_pictures, "how_often_get_velocity_list": 1}
         self.plot_params = plot_params
@@ -73,7 +73,7 @@ class Simulation():
         if is_plot_velocity_for_step:
             for step in self.velocity_for_step:
                 plt.scatter(self.velocity_for_step[step].keys(), self.velocity_for_step[step].values())
-                plt.ylim((40, 100))
+                plt.ylim(ylim)
                 plt.xlabel("Numer samochodu")
                 plt.ylabel("Prędkość samochodu")
                 plt.savefig("../data/step{:03.0f}velocity.png".format(step))
@@ -134,9 +134,9 @@ class Tor():
                 if car_index == fastes_car_index:
                     c= 'r'
                 elif car_index == slowest_car_index:
-                    c = 'b'
+                    c = 'lawngreen'
                 else:
-                    c= 'g'
+                    c= 'b'
             else:
                 c='r' if car_index != self.chosen_car else 'g'
             ax1.scatter(car.get_position_x(), car.get_position_y(),
@@ -365,17 +365,17 @@ if __name__ == '__main__':
         S.get_ride_plot(200,plot_params=plot_params)
 
 
-    def plot_velocity_for_cars():
+    def plot_velocity_for_cars(n=30,ylim=(40,100)):
         S = Simulation(aceleration_model='function_in_velocity')
-        S.get_flow(1500, car_n_min=30, car_n_max=30, is_plot_velocity_for_step=True,
-                   how_many_pictures=100)
+        S.get_flow(1500, car_n_min=n, car_n_max=n, is_plot_velocity_for_step=True,
+                   how_many_pictures=100,ylim=ylim)
 
-    def plot_ride_fasted_car():
-        S = Simulation(car_number=15,aceleration_model='function_in_velocity')
+    def plot_ride_fasted_car(n=15):
+        S = Simulation(car_number=n,aceleration_model='function_in_velocity')
         plot_params = {"how_often_take_snapshot": 2,
-                       "first_picture": 100,
+                       "first_picture": 300,
                        "how_often_get_velocity_list": 10000}
-        S.get_ride_plot(200, plot_params=plot_params,is_mark_fasted_car=True)
+        S.get_ride_plot(500, plot_params=plot_params,is_mark_fasted_car=True)
 
     def plot_flow():
         S = Simulation(aceleration_model="function_in_velocity")
