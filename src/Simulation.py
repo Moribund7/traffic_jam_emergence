@@ -102,7 +102,7 @@ class Tor():
         self.max_speed = 1.5*0.1 #TODO zmienic to jako 1.5 * predkosc poczatkowa lub jako 2*
         self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed, aceleration_model=aceleration_model)
 
-        self.chosen_car = 7
+        self.chosen_car = [7]
     def show_tor(self,step,**kwargs):
         fig, ax = self.draw_tor(step,**kwargs)
         fig.show()
@@ -138,7 +138,7 @@ class Tor():
                 else:
                     c= 'b'
             else:
-                c='r' if car_index != self.chosen_car else 'g'
+                c='r' if car_index in self.chosen_car else 'g'
             ax1.scatter(car.get_position_x(), car.get_position_y(),
                        label=str("{:2.2f}".format(car.angle_velocity* 2 * Car.radius *3.6))+
                         r'$\frac{km}{h}$',
@@ -147,7 +147,7 @@ class Tor():
         ax1.set(xlim=[-x_limit, x_limit])
         ax1.set(ylim=[-x_limit, x_limit])
         self.step_list.append(step)
-        self.velocity_list.append(self.car_list[self.chosen_car].angle_velocity*2 * Car.radius*3.6)
+        self.velocity_list.append(self.car_list[self.chosen_car[0]].angle_velocity*2 * Car.radius*3.6)
         if plot_velocity_scatter:
             ax2.scatter(self.step_list, self.velocity_list)
 
@@ -357,8 +357,8 @@ class Car_function_in_velocity_aceleration(Car):
 
 if __name__ == '__main__':
 
-    def plot_ride_some_snaps():
-        S = Simulation(aceleration_model='linear')
+    def plot_ride_some_snaps(car_number=10):
+        S = Simulation(aceleration_model='linear', car_number=car_number)
         plot_params={"how_often_take_snapshot": 2,
                                "first_picture": 100,
                                "how_often_get_velocity_list": 10000}
@@ -381,7 +381,7 @@ if __name__ == '__main__':
         S = Simulation(aceleration_model="function_in_velocity")
         S.get_flow(1100, car_n_min=10, car_n_max=80, is_plot_flow=True)
 
-    plot_flow()
+    plot_ride_some_snaps(car_number=30)
 
     def plot_flow_vs_models():
         S_b=Simulation(aceleration_model="binary")
