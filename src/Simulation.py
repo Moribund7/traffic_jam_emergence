@@ -69,14 +69,13 @@ class Simulation():
 
         if is_plot_flow:
             self.plot_flow()
-
         if is_plot_velocity_for_step:
             for step in self.velocity_for_step:
                 plt.scatter(self.velocity_for_step[step].keys(), self.velocity_for_step[step].values())
                 plt.ylim(ylim)
                 plt.xlabel("Numer samochodu")
                 plt.ylabel("Prędkość samochodu")
-                plt.savefig("../data/step{:03.0f}velocity.png".format(step))
+                plt.savefig("../data/step{:03.0f}velocity.png".format(step),dpi=100)
                 plt.close()
 
     def plot_flow(self):
@@ -102,7 +101,7 @@ class Tor():
         self.max_speed = 1.5*0.1 #TODO zmienic to jako 1.5 * predkosc poczatkowa lub jako 2*
         self.car_list = self.init_cars(how_many_cars, max_speed=self.max_speed, aceleration_model=aceleration_model)
 
-        self.chosen_car = [7]
+        self.chosen_car = [7,14,21]
     def show_tor(self,step,**kwargs):
         fig, ax = self.draw_tor(step,**kwargs)
         fig.show()
@@ -118,7 +117,7 @@ class Tor():
         
         return max_index,min_index
 
-    def draw_tor(self, step, plot_road=False, plot_velocity_scatter=False, is_mark_fasted_car=False):
+    def draw_tor(self, step, plot_road=False, plot_velocity_scatter=False, is_mark_fasted_car=False, show_legend=True):
         x_limit = self.plot_params['x_limit']
         figsize = self.plot_params['figsize']
         if plot_velocity_scatter:
@@ -143,7 +142,8 @@ class Tor():
                        label=str("{:2.2f}".format(car.angle_velocity* 2 * Car.radius *3.6))+
                         r'$\frac{km}{h}$',
                         c=c)
-        ax1.legend()
+        if show_legend:
+            ax1.legend()
         ax1.set(xlim=[-x_limit, x_limit])
         ax1.set(ylim=[-x_limit, x_limit])
         self.step_list.append(step)
@@ -185,7 +185,7 @@ class Tor():
 
     def save_picture(self, name,step, **kwargs):
         fig, ax = self.draw_tor(step,**kwargs)
-        fig.savefig(name)
+        fig.savefig(name, dpi=150)
         plt.close()
 
     def plot_road(self, ax, interior_radius_coeficient=.9, exterior_radius_coeficient=1.1):
@@ -294,7 +294,7 @@ class CarLinearAcceleration(Car):
                 self.aceleration = 0
                 return
             self.accelerate(distance,desirable_distance)
-        elif 0.5 * desirable_distance > distance:
+        elif 0.7 * desirable_distance > distance:
             self.slow_down_fast()
         else:
             self.slow_down(distance,desirable_distance)
@@ -345,11 +345,11 @@ class Car_function_in_velocity_aceleration(Car):
             self.aceleration = aceleration_speed
         else:
             self.aceleration = aceleration_speed * (
-                        distance - desirable_distance) / desirable_distance + 0.1 * np.random.normal() * aceleration_speed
+                        distance - desirable_distance) / desirable_distance + 0.5 * np.random.normal() * aceleration_speed
 
     def slow_down(self, distance, desirable_distance, aceleration_speed=2 * 0.0075):
         self.aceleration = aceleration_speed * (
-                    distance - desirable_distance) / desirable_distance + 0.1 * np.random.normal() * aceleration_speed
+                    distance - desirable_distance) / desirable_distance + 0.5 * np.random.normal() * aceleration_speed
 
     def slow_down_fast(self, aceleration_speed=0.045):
         self.aceleration = -aceleration_speed
@@ -358,11 +358,11 @@ class Car_function_in_velocity_aceleration(Car):
 if __name__ == '__main__':
 
     def plot_ride_some_snaps(car_number=10):
-        S = Simulation(aceleration_model='linear', car_number=car_number)
-        plot_params={"how_often_take_snapshot": 2,
-                               "first_picture": 100,
+        S = Simulation(aceleration_model='function_in_velocity', car_number=car_number)
+        plot_params={"how_often_take_snapshot": 1,
+                               "first_picture": 1,
                                "how_often_get_velocity_list": 10000}
-        S.get_ride_plot(200,plot_params=plot_params)
+        S.get_ride_plot(200,plot_params=plot_params,show_legend=False)
 
 
     def plot_velocity_for_cars(n=30,ylim=(40,100)):
