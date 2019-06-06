@@ -75,7 +75,7 @@ class Simulation():
                 plt.ylim(ylim)
                 plt.xlabel("Numer samochodu")
                 plt.ylabel("Prędkość samochodu")
-                plt.savefig("../data/step{:03.0f}velocity.png".format(step),dpi=100)
+                plt.savefig("../data/step{:03.0f}.png".format(step),dpi=100)
                 plt.close()
 
     def plot_flow(self):
@@ -345,11 +345,11 @@ class Car_function_in_velocity_aceleration(Car):
             self.aceleration = aceleration_speed
         else:
             self.aceleration = aceleration_speed * (
-                        distance - desirable_distance) / desirable_distance + 0.5 * np.random.normal() * aceleration_speed
+                        distance - desirable_distance) / desirable_distance + 0.1 * np.random.normal() * aceleration_speed
 
     def slow_down(self, distance, desirable_distance, aceleration_speed=2 * 0.0075):
         self.aceleration = aceleration_speed * (
-                    distance - desirable_distance) / desirable_distance + 0.5 * np.random.normal() * aceleration_speed
+                    distance - desirable_distance) / desirable_distance + 0.1 * np.random.normal() * aceleration_speed
 
     def slow_down_fast(self, aceleration_speed=0.045):
         self.aceleration = -aceleration_speed
@@ -381,7 +381,7 @@ if __name__ == '__main__':
         S = Simulation(aceleration_model="function_in_velocity")
         S.get_flow(1100, car_n_min=10, car_n_max=80, is_plot_flow=True)
 
-    plot_ride_some_snaps(car_number=30)
+    plot_velocity_for_cars()
 
     def plot_flow_vs_models():
         S_b=Simulation(aceleration_model="binary")
